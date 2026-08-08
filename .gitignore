@@ -1,0 +1,6 @@
+.direnv/
+result
+result-*
+.envrc.private
+*.pyc
+.DS_Store
