@@ -107,14 +107,21 @@ releases through the locked inputs. The Steam client updates itself on next laun
 
 ## CloudRedirect app status
 
-The CloudRedirect desktop app reports **"SLSsteam not found"** and **"CloudRedirect not deployed"** —
-this is normal and does not change after launching Steam. The app's status readout does not reflect
-the session injection from this flake; it just means CloudRedirect did not run inside a Steam session
-that this app can see. The actual `LD_AUDIT`/`LD_PRELOAD` injection works regardless.
+The app's "SLSsteam" row is a prerequisite check for the imperative h3adcr-b layout: it stats
+`~/.local/share/SLSsteam/SLSsteam.so`. Nix keeps SLSsteam in the store, so the home module links it
+to that path and grants the Flatpak `/nix/store:ro` (otherwise the symlink dangles inside the
+sandbox) — the app then shows **"SLSsteam: Installed"**.
 
-CloudRedirect only syncs if `DisableCloud: no` is set in `~/.config/SLSsteam/config.yaml` (this
-flake ships exactly that via the `services.sls-steam.config` default). If you set
-`DisableCloud: yes`, the app will show "CloudRedirect not deployed" and cloud saves stop working.
+**"CloudRedirect: Not deployed"** stays and is harmless: "deploy" means copying the bundled `.so`
+into place and patching `steam.sh`, which this flake replaces with `LD_PRELOAD` from the pinned
+flake input. Injection works regardless — check `~/.config/CloudRedirect/cr_debug.log` for
+`DoInit: SUCCESS`.
+
+CloudRedirect only syncs if `DisableCloud: no` is set in `~/.config/SLSsteam/config.yaml`. Careful
+with duplicate keys: SLSsteam's yaml-cpp lets the **last** occurrence win, and SteaMidra appends a
+second flat key block to the file — so a `DisableCloud: no` at the top can be silently overridden by
+a `DisableCloud: yes` further down. `nix-crab-status` reads the last occurrence and warns about
+duplicates.
 
 ## Client downgrade (optional)
 
@@ -165,7 +172,13 @@ If you want to use [SteaMidra (SFF)](https://github.com/Midrags/SFF) to manage S
 programs.nix-crab.steamidra.enable = true;
 ```
 
-This installs the packaged .NET 9 AppImage with sandboxing disabled for QtWebEngine, proper icon integration, and a desktop entry (`steamidra`). If you use SteaMidra alongside Nix-managed config, set `programs.nix-crab.slssteam.manageConfig = true;` or leave it unmanaged (`false`, the default) so SteaMidra can update `config.yaml` directly.
+The release version comes from the `steamidra` flake input (GitHub's tag list), but the 520 MiB
+AppImage is _not_ fetched by Nix: SFF has no versionless asset URL, so a Nix fetch would need a
+hand-bumped SRI hash for every release. Instead the `steamidra` launcher downloads and unpacks
+exactly the locked version into `~/.local/share/SteaMidra/` on first run (with a desktop
+notification), then runs it through `appimage-run` with QtWebEngine sandboxing disabled. After
+`nix flake update` the next launch picks up the new version. The desktop icon appears after that
+first run. If you use SteaMidra alongside Nix-managed config, set `programs.nix-crab.slssteam.manageConfig = true;` or leave it unmanaged (`false`, the default) so SteaMidra can update `config.yaml` directly.
 
 ## Comparison to h3adcr-b
 

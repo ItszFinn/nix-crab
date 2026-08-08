@@ -29,5 +29,7 @@ Modules are partial applications: `flake.nix` threads flake inputs in via `(impo
 
 - **Path-input narHash**: the user's `~/dotfiles` consumes this via `path:/home/finn/Projects/nix-crab`. After editing here, their `flake.lock` must be updated (`nix flake lock --update-input nix-crab`), otherwise `nh`/`nixos-rebuild` fails with a NAR hash mismatch.
 - `downgrade.nix` pins SRI hashes for dgsc/dlm/sources.txt/clientManifest — update them when those upstream files change.
+- **The `steamidra` input is `api.github.com/repos/Midrags/SFF/tags`, not `releases/latest`** — the releases JSON embeds per-asset download counters, so its narHash changes within the hour and every eval after the tarball TTL dies with `mismatch in field 'narHash'`. Do not pin `narHash` in `flake.nix` either; that makes the same breakage permanent. `/tags` only changes on a new tag, and the newest tag is the first element.
+- **SteaMidra's AppImage is downloaded by the launcher at runtime, not by Nix** — there is no versionless asset URL (`releases/latest/download/SteaMidra-linux.zip` is a 404), so a Nix fetch would need a hand-bumped SRI hash per release, which the user rejected. The flake input supplies the version, the launcher unpacks that version into `~/.local/share/SteaMidra/` and runs it via `appimage-run`. Do not reintroduce `fetchurl` + hash or `appimageTools.wrapType2`.
 - `modules/steam.cfg` `BootStrapperForceSelfUpdate` typo was fixed; keep it `disable`.
 - `h3adcr-b.sh` in repo root is reference material only — not part of any build.

@@ -6,48 +6,56 @@
   config,
   ...
 }: let
-  # GitHub API releases/latest — re-lock with `nix flake update` to track the
-  # newest release. Version and asset URL are derived from this JSON.
-  meta = builtins.fromJSON (builtins.readFile steamidra);
+  # Newest tag from the pinned /tags JSON (GitHub lists tags newest-first).
+  # Re-lock with `nix flake update` to track a new release.
+  version = lib.removePrefix "v"
+    (builtins.head (builtins.fromJSON (builtins.readFile steamidra))).name;
 
-  version = lib.removePrefix "v" meta.tag_name;
+  # Absolute, not $HOME: this also lands in the .desktop Icon= path, which is
+  # not shell-expanded.
+  dataDir = "${config.home.homeDirectory}/.local/share/SteaMidra";
 
-  linuxZip = builtins.head (
-    builtins.filter (a: lib.hasSuffix "-linux.zip" a.name) meta.assets
-  );
-
-  zip = pkgs.fetchurl {
-    url = linuxZip.browser_download_url;
-    # Bump this SRI hash when a new release ships (same rule as downgrade.nix).
-    sha256 = "sha256-LICtDm4Lwstw2vKpBy5XAeXgdlMRV/dXkmnlqZw06Xg=";
-  };
-
-  steamidraAssets = pkgs.runCommand "steamidra-assets" {
-    nativeBuildInputs = [pkgs.unzip];
-  } ''
-    mkdir -p $out
-    unzip -q ${zip} "SteaMidra*.AppImage" -d $out
-    unzip -q ${zip} "*.png" -d $out
-    mv $out/SteaMidra*.AppImage $out/SteaMidra.AppImage
-    mv $out/*.png $out/steamidra.png
-  '';
-
-  steamidraWrapped = pkgs.appimageTools.wrapType2 {
-    pname = "steamidra";
-    inherit version;
-    src = "${steamidraAssets}/SteaMidra.AppImage";
-  };
-
+  # The release asset URL carries the version, so there is no stable URL that
+  # could be a flake input on its own, and fetching the 520 MiB zip from Nix
+  # would mean a hand-bumped SRI hash. So the launcher unpacks it into $HOME on
+  # first run, for exactly the version the steamidra input is locked to.
   # sff_data_dir() (sff/core/utils.py) writes settings.bin next to the running
-  # binary. wrapType2 puts the binary in the read-only Nix store, so we point
-  # APPIMAGE at a writable $HOME path (same location as the official installer)
-  # to make root_folder() resolve there.
+  # binary, which is why $HOME (not the store) is the right place anyway.
   steamidraLauncher = pkgs.writeShellScriptBin "steamidra" ''
-    export APPIMAGE="$HOME/.local/share/SteaMidra/SteaMidra.AppImage"
-    mkdir -p "$(dirname "$APPIMAGE")"
+    set -euo pipefail
+    app="${dataDir}/SteaMidra.AppImage"
+
+    if [ "$(cat "${dataDir}/.version" 2>/dev/null || true)" != "${version}" ]; then
+      ${pkgs.libnotify}/bin/notify-send -a SteaMidra \
+        "Downloading SteaMidra ${version}" "About 520 MiB, this takes a while." || true
+      tmp=$(mktemp -d)
+      trap 'rm -rf "$tmp"' EXIT
+      ${pkgs.curl}/bin/curl -fL --progress-bar -o "$tmp/sff.zip" \
+        "https://github.com/Midrags/SFF/releases/download/v${version}/SteaMidra-${version}-linux.zip"
+      ${pkgs.unzip}/bin/unzip -qo "$tmp/sff.zip" "SteaMidra*.AppImage" "*.png" -d "$tmp"
+      mkdir -p "${dataDir}"
+      mv "$tmp"/SteaMidra*.AppImage "$app"
+      chmod +x "$app"
+      mv "$tmp"/*.png "${dataDir}/steamidra.png"
+      echo "${version}" > "${dataDir}/.version"
+      ${pkgs.libnotify}/bin/notify-send -a SteaMidra "SteaMidra ${version} ready" || true
+    fi
+
+    export APPIMAGE="$app"
     export QTWEBENGINE_DISABLE_SANDBOX=1
-    exec ${steamidraWrapped}/bin/steamidra "$@"
+    exec ${pkgs.appimage-run}/bin/appimage-run "$app" "$@"
   '';
+
+  desktopItem = pkgs.makeDesktopItem {
+    name = "steamidra";
+    desktopName = "SteaMidra";
+    comment = "Steam game setup and manifest tool";
+    exec = "${steamidraLauncher}/bin/steamidra";
+    # Unpacked from the zip on first run, so missing until then.
+    icon = "${dataDir}/steamidra.png";
+    categories = ["Utility"];
+    startupNotify = false;
+  };
 in {
   options.programs.nix-crab.steamidra.enable =
     lib.mkEnableOption "SteaMidra (SFF) game downloader";
@@ -58,17 +66,14 @@ in {
       steamidraLauncher
     ];
 
-    home.file.".local/share/icons/hicolor/256x256/apps/steamidra.png".source =
-      "${steamidraAssets}/steamidra.png";
-
-    xdg.desktopEntries.steamidra = {
-      name = "SteaMidra";
-      comment = "Steam game setup and manifest tool";
-      exec = "${steamidraLauncher}/bin/steamidra";
-      icon = "${steamidraAssets}/steamidra.png";
-      terminal = false;
-      categories = ["Utility"];
-      startupNotify = false;
+    # Not xdg.desktopEntries: that lands in the profile, and SteaMidra writes
+    # its own ~/.local/share/applications/steamidra.desktop on startup with
+    # Exec pointing at the raw AppImage — which cannot run on NixOS (no
+    # libfuse2). XDG_DATA_HOME is searched before the profile, so that broken
+    # entry would shadow ours. Own the path and force it back on every switch.
+    home.file.".local/share/applications/steamidra.desktop" = {
+      source = "${desktopItem}/share/applications/steamidra.desktop";
+      force = true;
     };
   };
 }

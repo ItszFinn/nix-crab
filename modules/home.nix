@@ -9,6 +9,8 @@
   config,
   ...
 }: let
+  slssteamPkg = sls-steam.packages.${pkgs.stdenv.hostPlatform.system}.sls-steam;
+
   cloudredirectCli = pkgs.stdenv.mkDerivation {
     pname = "cloud_redirect_cli";
     version = "0.0.0";
@@ -43,10 +45,15 @@
     echo
     echo "=== SLSsteam ==="
     CFG="$HOME/.config/SLSsteam/config.yaml"
+    # yaml-cpp lets the LAST duplicate key win, and SteaMidra appends a second
+    # flat key block to config.yaml. So always read the last occurrence.
+    val() { grep "^$1:" "$CFG" | tail -1 | awk '{print $2}'; }
     if [ -f "$CFG" ]; then
-      echo "DisableCloud:   $(grep -m1 '^DisableCloud:' "$CFG" | awk '{print $2}')"
-      echo "PlayNotOwned:   $(grep -m1 '^PlayNotOwnedGames:' "$CFG" | awk '{print $2}')"
-      echo "SafeMode:       $(grep -m1 '^SafeMode:' "$CFG" | awk '{print $2}')"
+      echo "DisableCloud:   $(val DisableCloud)"
+      echo "PlayNotOwned:   $(val PlayNotOwnedGames)"
+      echo "SafeMode:       $(val SafeMode)"
+      DUPES=$(grep -c '^DisableCloud:' "$CFG")
+      [ "$DUPES" -gt 1 ] && echo "Warning:        DisableCloud set $DUPES times - only the last counts"
     else
       echo "Config missing: $CFG"
     fi
@@ -54,7 +61,7 @@
 
     echo
     echo "=== CloudRedirect ==="
-    if [ -f "$CFG" ] && grep -Fq "DisableCloud: no" "$CFG"; then
+    if [ -f "$CFG" ] && [ "$(val DisableCloud)" = "no" ]; then
       echo "Status: Enabled (DisableCloud: no)"
     else
       echo "Status: Disabled"
@@ -151,6 +158,13 @@ in {
           origin = "cloudredirect";
         }
       ];
+      # The app's SLSsteam check follows ~/.local/share/SLSsteam/SLSsteam.so
+      # (see home.file below) into the Nix store, so the sandbox has to see the
+      # store — with only filesystems=home that symlink is dangling inside the
+      # Flatpak and the check fails.
+      overrides.settings."org.cloudredirect.CloudRedirect".Context.filesystems = [
+        "/nix/store:ro"
+      ];
       remotes = [
         {
           name = "flathub";
@@ -165,6 +179,11 @@ in {
 
     home.file = {
       ".config/SLSsteam/tools/netsock/netsock.so".source = steamnetsock;
+      # The CloudRedirect app's prerequisite check stats
+      # $XDG_DATA_HOME/SLSsteam/SLSsteam.so (the imperative h3adcr-b layout).
+      # Nix keeps SLSsteam in the store, so without this link the app shows
+      # "SLSsteam: Not found" and refuses to deploy/update.
+      ".local/share/SLSsteam/SLSsteam.so".source = "${slssteamPkg}/SLSsteam.so";
       ".local/share/CloudRedirect/cloud_redirect_lib".source =
         "${cloudredirectCli}/bin/cloud_redirect_cli";
     };

@@ -25,9 +25,12 @@
     };
     steamidra = {
       type = "file";
-      url = "https://api.github.com/repos/Midrags/SFF/releases/latest";
+      # Tag list, not releases/latest: that JSON embeds per-asset download
+      # counters, so its narHash changes within the hour and every eval after
+      # the tarball TTL dies with a narHash mismatch. /tags only changes when a
+      # new tag is pushed. `nix flake update` follows the newest release.
+      url = "https://api.github.com/repos/Midrags/SFF/tags";
       flake = false;
-      narHash = "sha256-e1BunPItO4rUpXXWPyrgadT4DtetMQWCEM9wLr1YmdQ=";
     };
   };
 
