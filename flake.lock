@@ -89,11 +89,12 @@
     "steamidra": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-Wq/d4B9quAWsw2Zvp0+cMfGAUZdhVR0xx7eIN3v7h0A=",
+        "narHash": "sha256-e1BunPItO4rUpXXWPyrgadT4DtetMQWCEM9wLr1YmdQ=",
         "type": "file",
         "url": "https://api.github.com/repos/Midrags/SFF/releases/latest"
       },
       "original": {
+        "narHash": "sha256-e1BunPItO4rUpXXWPyrgadT4DtetMQWCEM9wLr1YmdQ=",
         "type": "file",
         "url": "https://api.github.com/repos/Midrags/SFF/releases/latest"
       }

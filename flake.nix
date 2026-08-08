@@ -27,6 +27,7 @@
       type = "file";
       url = "https://api.github.com/repos/Midrags/SFF/releases/latest";
       flake = false;
+      narHash = "sha256-e1BunPItO4rUpXXWPyrgadT4DtetMQWCEM9wLr1YmdQ=";
     };
   };
 
