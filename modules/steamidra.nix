@@ -58,16 +58,17 @@ in {
       steamidraLauncher
     ];
 
-    home.file."/.local/share/icons/hicolor/256x256/apps/steamidra.png".source =
+    home.file.".local/share/icons/hicolor/256x256/apps/steamidra.png".source =
       "${steamidraAssets}/steamidra.png";
 
     xdg.desktopEntries.steamidra = {
       name = "SteaMidra";
       comment = "Steam game setup and manifest tool";
-      exec = "steamidra";
-      icon = "steamidra";
+      exec = "${steamidraLauncher}/bin/steamidra";
+      icon = "${steamidraAssets}/steamidra.png";
       terminal = false;
       categories = ["Utility"];
+      startupNotify = false;
     };
   };
 }
