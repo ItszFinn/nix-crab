@@ -61,11 +61,12 @@
 
     echo
     echo "=== CloudRedirect ==="
-    if [ -f "$CFG" ] && [ "$(val DisableCloud)" = "no" ]; then
-      echo "Status: Enabled (DisableCloud: no)"
-    else
-      echo "Status: Disabled"
-    fi
+    # Both spellings: SLSsteam and SteaMidra write YAML 1.2 true/false, a
+    # hand-edited or headcrab-era config carries YAML 1.1 yes/no.
+    case "$([ -f "$CFG" ] && val DisableCloud)" in
+      no | false) echo "Status: Enabled (DisableCloud: $(val DisableCloud))" ;;
+      *)          echo "Status: Disabled" ;;
+    esac
     echo "CLI:            $([ -x "$HOME/.local/share/CloudRedirect/cloud_redirect_lib" ] && echo present || echo missing)"
     echo "Flatpak:        $([ -d "$HOME/.local/share/flatpak/app/org.cloudredirect.CloudRedirect" ] && echo installed || echo not installed)"
 
@@ -77,29 +78,6 @@
       echo "no steam.cfg -> client follows updates"
     fi
   '';
-  # The typed sls-steam home module emits booleans as `true`/`false` (remarshal),
-  # but headcrab (h3adcr-b.sh) and nix-crab-status grep the literal
-  # `DisableCloud: no`. So we reuse the typed option surface but render the file
-  # ourselves with YAML 1.1 `yes`/`no` booleans.
-  renderVal = v:
-    if v == true then "yes"
-    else if v == false then "no"
-    else if builtins.isList v then
-      if v == [] then "[]"
-      else "[ " + lib.concatMapStringsSep ", " renderVal v + " ]"
-    else if builtins.isAttrs v then
-      if v == {} then "{}"
-      else
-        "{ "
-        + lib.concatStringsSep ", "
-          (lib.mapAttrsToList (k: val: "${k}: ${renderVal val}") v)
-        + " }"
-    else if builtins.isString v then "'${v}'"
-    else builtins.toString v;
-
-  renderConfig = cfg:
-    lib.concatStringsSep "\n" (lib.mapAttrsToList (k: v: "${k}: ${renderVal v}") cfg)
-    + "\n";
 in {
   imports = [
     sls-steam.homeModules.sls-steam
@@ -113,13 +91,13 @@ in {
       Whether Nix should write ~/.config/SLSsteam/config.yaml. Disabled by
       default so tools like SteaMidra can edit the file without it being reset
       on the next home-manager switch. When enabled, the file is generated from
-      services.sls-steam.config with headcrab-compatible yes/no booleans.
+      services.sls-steam.config by the upstream sls-steam module.
     '';
   };
 
   config = {
-    # headcrab-compatible defaults: PlayNotOwnedGames yes, DisableCloud no,
-    # SafeMode no (SafeMode self-blocks on desktop). mkDefault so user config
+    # headcrab-equivalent defaults: PlayNotOwnedGames on, DisableCloud off,
+    # SafeMode off (SafeMode self-blocks on desktop). mkDefault so user config
     # can override them.
     services.sls-steam.config = {
       PlayNotOwnedGames = lib.mkDefault true;
@@ -137,19 +115,11 @@ in {
       SteamIdOverride = lib.mkDefault {};
     };
 
-    # Only manage config.yaml when explicitly enabled. Otherwise neither our
-    # renderer nor the typed module writes it, so tools editing the file keep
-    # their changes across home-manager switches.
-    xdg.configFile."SLSsteam/config.yaml" = {
-      enable = config.programs.nix-crab.slssteam.manageConfig;
-      # Force the source: the typed module sets `source` as a plain value which
-      # would beat the mkDefault source derived from `text`. We render the file
-      # ourselves (yes/no booleans, headcrab-compatible).
-      source = lib.mkForce (pkgs.writeTextFile {
-        name = "SLSsteam-config.yaml";
-        text = renderConfig config.services.sls-steam.config;
-      });
-    };
+    # Only manage config.yaml when explicitly enabled. Otherwise the typed
+    # module's source is still evaluated but never written, so tools editing the
+    # file keep their changes across home-manager switches.
+    xdg.configFile."SLSsteam/config.yaml".enable =
+      config.programs.nix-crab.slssteam.manageConfig;
 
     services.flatpak = {
       packages = [
