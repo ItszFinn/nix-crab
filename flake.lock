@@ -1,5 +1,17 @@
 {
   "nodes": {
+    "accela": {
+      "flake": false,
+      "locked": {
+        "narHash": "sha256-tAyIIBbqVLP9c1WpUjFUsVYmGdRg6kz4vXqLXXJpPEk=",
+        "type": "file",
+        "url": "https://github.com/ciscosweater/enter-the-wired/releases/download/latest/deps.tar.gz"
+      },
+      "original": {
+        "type": "file",
+        "url": "https://github.com/ciscosweater/enter-the-wired/releases/download/latest/deps.tar.gz"
+      }
+    },
     "cloudredirect": {
       "flake": false,
       "locked": {
@@ -57,6 +69,7 @@
     },
     "root": {
       "inputs": {
+        "accela": "accela",
         "cloudredirect": "cloudredirect",
         "cloudredirect-cli": "cloudredirect-cli",
         "nix-flatpak": "nix-flatpak",

@@ -1,18 +1,18 @@
 # AGENTS.md
 
-NixOS/home-manager flake that reproduces h3adcr-b (SLSsteam + CloudRedirect + optional Steam client downgrade) declaratively. Not a git repo yet — do not assume `git` works.
+NixOS/home-manager flake that reproduces h3adcr-b (SLSsteam + CloudRedirect + optional Steam client downgrade) declaratively.
 
 ## Architecture
 
 Hybrid flake with two independent module outputs in `flake.nix`:
 - `nixosModules.default` — imports `slssteam.nix` (Steam package override, `LD_AUDIT`), `cloudredirect.nix` (`services.flatpak.enable` + `LD_PRELOAD` via `slssteam.extraEnv`), `downgrade.nix`.
-- `homeModules.default` — imports `home.nix` (hand-written `config.yaml`, netsock + CLI via `home.file`, CloudRedirect Flatpak via nix-flatpak, `nix-crab-status`).
+- `homeModules.default` — imports `home.nix` (hand-written `config.yaml`, netsock + CLI via `home.file`, CloudRedirect Flatpak via nix-flatpak, `nix-crab-status`), `steamidra.nix`, `accela.nix`.
 
 Modules are partial applications: `flake.nix` threads flake inputs in via `(import ./modules/x.nix {inherit input;})`. When adding a new module, follow that pattern — do not use `inputs` in the module body.
 
 ## Critical decisions (do not "fix" these)
 
-- **`services.sls-steam.config` uses the upstream typed sls-steam home module** (`sls-steam.homeModules.sls-steam`) and lets it generate `config.yaml` as-is — `DisableCloud: false`, YAML 1.2 booleans. There used to be a hand-written yes/no YAML renderer here plus a `lib.mkForce` on the `source` of `xdg.configFile."SLSsteam/config.yaml"`, because headcrab (`h3adcr-b.sh`) grepped the literal `DisableCloud: no`. That script is gone; the only remaining reader is `nix-crab-status`, which now accepts `no` and `false`. Do not reintroduce the renderer — teach the reader both spellings instead. Defaults are `lib.mkDefault`: `PlayNotOwnedGames` on, `DisableCloud` off, `SafeMode` off (SafeMode self-blocks on desktop).
+- **`services.sls-steam.config` uses the upstream typed sls-steam home module** (`sls-steam.homeModules.sls-steam`) and lets it generate `config.yaml` as-is — `DisableCloud: false`, YAML 1.2 booleans. There used to be a hand-written yes/no YAML renderer here plus a `lib.mkForce` on the `source` of `xdg.configFile."SLSsteam/config.yaml"`, because headcrab (`h3adcr-b.sh`) grepped the literal `DisableCloud: no`. That script is gone. Readers are `nix-crab-status` **and CloudRedirect's own `.so`** (`src/platform/linux/yaml_parser.h`) — both accept `no` and `false`, so YAML 1.2 is safe. Do not reintroduce the renderer — teach the reader both spellings instead. Both are **last-occurrence-wins**, which is what makes SteaMidra's appended flat key block dangerous (see README, "CloudRedirect app status"). Defaults are `lib.mkDefault`: `PlayNotOwnedGames` on, `DisableCloud` off, `SafeMode` off (SafeMode self-blocks on desktop).
 - **`programs.nix-crab.slssteam.manageConfig` defaults to `false`** — `config.yaml` is left unmanaged so tools like SteaMidra that edit the file keep their changes across home-manager switches. The typed module still injects a dead `source`/`text`, but the file's `enable = false` stops it from being written. Set `manageConfig = true` to have Nix write the file again.
 - **Two-module design by explicit user request.** The user rejected auto-wiring home-manager into the NixOS module and rejected integration/assertion modules (`homeModuleImported`, `nixosModuleImported`, a `programs.nix-crab.user` option). Do not reintroduce flags, assertions, or `home-manager.nixosModules.home-manager` wiring.
 - **Steam client follows updates by default.** `steam.cfg` is only written by the downgrade script (`if [ ! -f ... ]`), not by home.nix.
@@ -31,5 +31,8 @@ Modules are partial applications: `flake.nix` threads flake inputs in via `(impo
 - `downgrade.nix` pins SRI hashes for dgsc/dlm/sources.txt/clientManifest — update them when those upstream files change.
 - **The `steamidra` input is `api.github.com/repos/Midrags/SFF/tags`, not `releases/latest`** — the releases JSON embeds per-asset download counters, so its narHash changes within the hour and every eval after the tarball TTL dies with `mismatch in field 'narHash'`. Do not pin `narHash` in `flake.nix` either; that makes the same breakage permanent. `/tags` only changes on a new tag, and the newest tag is the first element.
 - **SteaMidra's AppImage is downloaded by the launcher at runtime, not by Nix** — there is no versionless asset URL (`releases/latest/download/SteaMidra-linux.zip` is a 404), so a Nix fetch would need a hand-bumped SRI hash per release, which the user rejected. The flake input supplies the version, the launcher unpacks that version into `~/.local/share/SteaMidra/` and runs it via `appimage-run`. Do not reintroduce `fetchurl` + hash or `appimageTools.wrapType2`.
+- **The `accela` input is Enter The Wired's `deps.tar.gz`, not upstream ACCELA.** `froster01/ACCELA` publishes no releases and no tags, and its tree cannot live in the store anyway (chdirs into itself, opens `app.log` with `mode="w"`, resolves assets relative to cwd). The Enter The Wired asset URL is versionless, so this one is a plain flake input with the AppImage in the store — no tag-list indirection, no runtime download.
+- **`appimage-run` needs `extraPkgs = p: [p.zstd]`** — the bundled PyQt6 links `libzstd.so.1`, absent from the FHS rootfs. Eval and build pass either way; only launching catches it. Smoke-test: `HOME=$(mktemp -d) QT_QPA_PLATFORM=offscreen accela`.
+- **`ACCELA.conf` is seeded, never managed** — QSettings rewrites it, so a store symlink breaks it, same reason as `slssteam.manageConfig`. Seeds only when absent; upstream awk-merges the keys into an existing `[General]`.
 - `modules/steam.cfg` `BootStrapperForceSelfUpdate` typo was fixed; keep it `disable`.
 - `h3adcr-b.sh` in repo root is reference material only — not part of any build.

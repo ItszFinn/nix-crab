@@ -2,6 +2,13 @@
   description = "Flake for h3adcr-b on NixOS";
 
   inputs = {
+    accela = {
+      type = "file";
+      # Enter The Wired's bundle, which ships the AppImage. Versionless URL, so
+      # unlike steamidra it needs no tag-list indirection and no pinned hash.
+      url = "https://github.com/ciscosweater/enter-the-wired/releases/download/latest/deps.tar.gz";
+      flake = false;
+    };
     cloudredirect = {
       type = "file";
       url = "https://github.com/Selectively11/CloudRedirect/releases/latest/download/cloud_redirect.so";
@@ -34,7 +41,7 @@
     };
   };
 
-  outputs = {self, nixpkgs, sls-steam, cloudredirect, cloudredirect-cli, nix-flatpak, steamnetsock, steamidra}: {
+  outputs = {self, nixpkgs, sls-steam, cloudredirect, cloudredirect-cli, nix-flatpak, steamnetsock, steamidra, accela}: {
     nixosModules.default = {
       imports = [
         (import ./modules/slssteam.nix {inherit sls-steam;})
@@ -47,6 +54,7 @@
       imports = [
         (import ./modules/home.nix {inherit sls-steam nix-flatpak steamnetsock cloudredirect-cli;})
         (import ./modules/steamidra.nix {inherit steamidra;})
+        (import ./modules/accela.nix {inherit accela;})
       ];
     };
   };
