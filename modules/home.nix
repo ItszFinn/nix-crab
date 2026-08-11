@@ -2,6 +2,7 @@
   sls-steam,
   nix-flatpak,
   steamnetsock,
+  cloudredirect,
   cloudredirect-cli,
 }: {
   pkgs,
@@ -156,6 +157,12 @@ in {
       ".local/share/SLSsteam/SLSsteam.so".source = "${slssteamPkg}/SLSsteam.so";
       ".local/share/CloudRedirect/cloud_redirect_lib".source =
         "${cloudredirectCli}/bin/cloud_redirect_cli";
+      # Same deal for CloudRedirect's own deploy check: it stats
+      # $XDG_DATA_HOME/CloudRedirect/cloud_redirect.so and reports "failed to
+      # deploy" without it. The .so injected into Steam is still the LD_PRELOAD
+      # from the flake input (modules/cloudredirect.nix) — this is the same
+      # store path, just where the app looks for it.
+      ".local/share/CloudRedirect/cloud_redirect.so".source = cloudredirect;
     };
 
     home.packages = [cloudredirectCli nixCrabStatus];

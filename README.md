@@ -112,10 +112,15 @@ The app's "SLSsteam" row is a prerequisite check for the imperative h3adcr-b lay
 to that path and grants the Flatpak `/nix/store:ro` (otherwise the symlink dangles inside the
 sandbox) — the app then shows **"SLSsteam: Installed"**.
 
-**"CloudRedirect: Not deployed"** stays and is harmless: "deploy" means copying the bundled `.so`
-into place and patching `steam.sh`, which this flake replaces with `LD_PRELOAD` from the pinned
-flake input. Injection works regardless — check `~/.config/CloudRedirect/cr_debug.log` for
-`DoInit: SUCCESS`.
+The CloudRedirect row works the same way: the app's deploy check stats
+`~/.local/share/CloudRedirect/cloud_redirect.so` and otherwise reports **"failed to deploy"**. The
+home module links that path to the pinned flake input — the same `.so` that
+`modules/cloudredirect.nix` puts in `LD_PRELOAD`, so there is only ever one library.
+
+What the app's own "deploy" would do beyond that — patching `steam.sh` — this flake does not need;
+injection comes from `LD_PRELOAD`. Verify it with `DoInit: SUCCESS` in
+`~/.config/CloudRedirect/cr_debug.log`. Don't press deploy in the app: the linked `.so` is
+read-only in the store, so the app cannot write over it.
 
 CloudRedirect only syncs if `DisableCloud: no` is set in `~/.config/SLSsteam/config.yaml`. Careful
 with duplicate keys: SLSsteam's yaml-cpp lets the **last** occurrence win, and SteaMidra appends a

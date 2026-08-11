@@ -52,7 +52,7 @@
 
     homeModules.default = {
       imports = [
-        (import ./modules/home.nix {inherit sls-steam nix-flatpak steamnetsock cloudredirect-cli;})
+        (import ./modules/home.nix {inherit sls-steam nix-flatpak steamnetsock cloudredirect cloudredirect-cli;})
         (import ./modules/steamidra.nix {inherit steamidra;})
         (import ./modules/accela.nix {inherit accela;})
       ];
