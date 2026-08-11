@@ -17,6 +17,8 @@ plus a client-downgrade tool — all from a single flake.
 - **CloudRedirect CLI** (`cloud_redirect_cli`) available on `PATH` and at
   `~/.local/share/CloudRedirect/cloud_redirect_lib`.
 - **SteaMidra (SFF)** (optional) — .NET 9 AppImage for managing Steam accounts, tokens and configuration.
+- **ACCELA** (optional) — Qt depot-downloader GUI from the Enter The Wired bundle, configured to hand
+  its games to SLSsteam.
 - **Client downgrade** (`nix-crab-downgrade`) — pins the Steam client to headcrab's compatible build
   using `dlm` + `dgsc` + `-overridepackageurl`.
 - **`nix-crab-status`** — diagnostic command showing client version, SLSsteam config, netsock,
@@ -89,6 +91,7 @@ YAML 1.1 `yes`/`no` booleans (headcrab greps the literal `DisableCloud: no`). It
 | ------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
 | `programs.nix-crab.slssteam.manageConfig`   | Whether Nix manages `~/.config/SLSsteam/config.yaml` (default `false`, leaving the file unmanaged so external tools like SteaMidra can edit it). |
 | `programs.nix-crab.steamidra.enable`        | Enable SteaMidra (SFF) desktop app (.NET 9 AppImage wrapper with desktop entry and icon).                |
+| `programs.nix-crab.accela.enable`           | Enable ACCELA desktop app (Enter The Wired AppImage with desktop entry, icon and a seeded `ACCELA.conf`). |
 
 ## Updating
 
