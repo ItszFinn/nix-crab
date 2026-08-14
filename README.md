@@ -19,6 +19,8 @@ plus a client-downgrade tool — all from a single flake.
 - **SteaMidra (SFF)** (optional) — .NET 9 AppImage for managing Steam accounts, tokens and configuration.
 - **ACCELA** (optional) — Qt depot-downloader GUI from the Enter The Wired bundle, configured to hand
   its games to SLSsteam.
+- **Millennium** (optional) — Steam client modding framework (themes/plugins), applied as a `pkgs.steam`
+  overlay so it stacks with the SLSsteam injection instead of fighting it.
 - **Client downgrade** (`nix-crab-downgrade`) — pins the Steam client to headcrab's compatible build
   using `dlm` + `dgsc` + `-overridepackageurl`.
 - **`nix-crab-status`** — diagnostic command showing client version, SLSsteam config, netsock,
@@ -47,7 +49,8 @@ modules = [
   {
     programs.nix-crab.slssteam.enable = true;
     programs.nix-crab.cloudredirect.enable = true;
-    # programs.nix-crab.downgrade.enable = true;  # optional
+    # programs.nix-crab.millennium.enable = true;  # optional
+    # programs.nix-crab.downgrade.enable = true;   # optional
   }
 ];
 ```
@@ -74,6 +77,7 @@ they stay in sync.
 | `programs.nix-crab.slssteam.enable`      | Enable SLSsteam injection into the native Steam package. Implies `programs.steam.enable = true`.           |
 | `programs.nix-crab.slssteam.extraEnv`    | Extra environment variables merged into the Steam override (used by CloudRedirect for `LD_PRELOAD`).       |
 | `programs.nix-crab.cloudredirect.enable` | Enable CloudRedirect: enables the Flatpak service and sets `LD_PRELOAD` to the pinned `cloud_redirect.so`. |
+| `programs.nix-crab.millennium.enable`    | Replace `pkgs.steam` with `millennium-steam` via overlay. Combine with `slssteam.enable`.                   |
 | `programs.nix-crab.downgrade.enable`     | Add the `nix-crab-downgrade` script to `environment.systemPackages`.                                       |
 | `programs.nix-crab.downgrade.package`    | Override the wrapper script.                                                                               |
 
@@ -93,6 +97,8 @@ YAML 1.1 `yes`/`no` booleans (headcrab greps the literal `DisableCloud: no`). It
 | `programs.nix-crab.slssteam.manageConfig` | Whether Nix manages `~/.config/SLSsteam/config.yaml` (default `false`, leaving the file unmanaged so external tools like SteaMidra can edit it). |
 | `programs.nix-crab.steamidra.enable`      | Enable SteaMidra (SFF) desktop app (.NET 9 AppImage wrapper with desktop entry and icon).                                                        |
 | `programs.nix-crab.accela.enable`         | Enable ACCELA desktop app (Enter The Wired AppImage with desktop entry, icon and a seeded `ACCELA.conf`).                                        |
+| `programs.nix-crab.millennium.plugins`    | Millennium plugin IDs from [steambrew.app/plugins](https://steambrew.app/plugins); installed into `~/.local/share/millennium/plugins`.           |
+| `programs.nix-crab.millennium.themes`     | Millennium themes from [steambrew.app/themes](https://steambrew.app/themes) by ID, name or repo; installed into `~/.steam/steam/millennium/themes`. |
 
 ## Updating
 
@@ -189,6 +195,74 @@ notification), then runs it through `appimage-run` with QtWebEngine sandboxing d
 `nix flake update` the next launch picks up the new version. The desktop icon appears after that
 first run. If you use SteaMidra alongside Nix-managed config, set `programs.nix-crab.slssteam.manageConfig = true;` or leave it unmanaged (`false`, the default) so SteaMidra can update `config.yaml` directly.
 
+## Millennium (optional)
+
+[Millennium](https://github.com/SteamClientHomebrew/Millennium) adds themes and plugins to the Steam
+client:
+
+```nix
+programs.nix-crab.millennium.enable = true;
+```
+
+It is applied as an overlay (`steam = millennium-steam`), not as `programs.steam.package` — that
+option is already defined by the SLSsteam module, and a second definition is an eval error. As the
+overlay only swaps the base package, `modules/slssteam.nix` keeps overriding it, and Millennium's own
+`steam.nix` merges rather than replaces (`extraEnv // millenniumEnv`). The resulting Steam carries
+`LD_AUDIT` (SLSsteam), `LD_PRELOAD` (CloudRedirect) and `MILLENNIUM_RUNTIME_PATH` at once.
+
+Enable it together with `slssteam.enable`: on its own the module sets the package but not
+`programs.steam.enable`, so nothing gets installed.
+
+Two things to expect:
+
+- **No binary cache.** Upstream publishes no substituter, so Millennium is compiled locally — about
+  7 minutes for the 32- and 64-bit C++ trees on a 4-core laptop. The first build also pulls a large
+  toolchain (rustc, gcc, cmake, bun) and the pinned second nixpkgs, so expect a few GB of downloads
+  once; later rebuilds only recompile the three Millennium derivations.
+- **The `millennium` input deliberately does not follow this flake's `nixpkgs`.** Upstream pins its
+  own nixpkgs commit ("Bun FOD is sensitive to version changes"); following ours would rebuild
+  Millennium on every `nix flake update` and risk breaking that fixed-output derivation. The cost is
+  a second nixpkgs in the lock and a slightly older Steam wrapper version.
+
+### Plugins and themes
+
+Both are named by the `id` in their store URL — `https://steambrew.app/plugin/3dc714a7c1b1`,
+`https://steambrew.app/theme/1wwKwvHrFuzMs7Kb1Uzu` (the store's card menu copies it for you). Themes
+also accept their display name or GitHub repo name, whichever is at hand:
+
+```nix
+programs.nix-crab.millennium = {
+  plugins = [ "3dc714a7c1b1" ];
+  themes  = [ "1wwKwvHrFuzMs7Kb1Uzu" ];  # or "Adwaita"
+};
+```
+
+On activation each entry is resolved against the store index (`/api/v1/plugins` for plugins,
+`/api/v2` for themes) and unpacked where Millennium looks for it. Note that those are two different
+places on Linux: plugins go to `~/.local/share/millennium/plugins` (its `MILLENNIUM__PLUGINS_PATH`),
+themes to `~/.steam/steam/millennium/themes` (its internal `get_millennium_path()`). A stamp in
+`~/.local/share/millennium/.nix-crab/` records what was installed, so later switches touch nothing and
+hit no network unless you add an entry. Themes additionally get the `metadata.json` (owner, repo,
+commit) that Millennium writes itself, so its updater knows what is on disk.
+
+Installing is all this does. Enable the plugin, or pick the theme, once in Millennium's UI afterwards
+— both live in a `config.json` that Millennium rewrites, so this flake stays out of it. Millennium
+scans these folders at client startup, so restart Steam before looking for a fresh addon.
+
+Take an entry out of the list and the next switch deletes its folder again. Only stamped addons are
+touched, so whatever you installed yourself through Millennium's UI stays where it is. The active
+theme is not reset — if you remove the theme you are currently using, pick another one in the UI.
+
+Downloaded at activation, not with `fetchzip`: both stores serve an addon's newest commit, so a pinned
+hash would break on every upstream release. They also land as real directories rather than store
+symlinks, because Millennium writes into these folders.
+
+### Notes
+
+Millennium loads by symlinking its bootstrap over `libXtst.so.6` in `~/.local/share/Steam/ubuntu12_*`.
+It does not touch game processes, so it is irrelevant to VAC — but a Steam client update can break the
+hook, and untrusted third-party plugins run unsandboxed with your user's rights.
+
 ## Comparison to h3adcr-b
 
 | h3adcr-b                                  | nix-crab                                                    |
@@ -225,3 +299,4 @@ Project Credits:
 - **[CloudRedirect](https://github.com/Selectively11/CloudRedirect)** (by Selectively11) — for the reliable cloud save syncing.
 - **[SteaMidra (SFF)](https://github.com/Midrags/SFF)** (by Midrags) — for the powerful configuration and account manager.
 - **[steamnetsock-patch](https://github.com/yesyes0649/steamnetsock-patch)** (by yesyes0649) — for the multiplayer fixes.
+- **[Millennium](https://github.com/SteamClientHomebrew/Millennium)** (by Steam Homebrew) — for the client themes and plugins, and for shipping its own Nix package.
