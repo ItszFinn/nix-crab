@@ -208,6 +208,11 @@ first run. If you use SteaMidra alongside Nix-managed config, set `programs.nix-
 - Downloading and running third-party binaries (`dgsc`, `dlm`, `cloud_redirect_cli`) carries the same
   risk as h3adcr-b itself.
 
+## License
+
+MIT — see [LICENSE](LICENSE). Covers this flake's own Nix code only; the upstream projects it wires
+up keep their own licenses (SLSsteam is AGPL-3.0).
+
 ## Credits
 
 A huge thank you to the developers of the projects that make this declarative NixOS reproduction possible.
