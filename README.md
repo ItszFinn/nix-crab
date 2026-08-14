@@ -33,7 +33,7 @@ Add the flake as an input:
 ```nix
 {
   inputs = {
-    nix-crab.url = "github:your-user/nix-crab";
+    nix-crab.url = "github:ItszFinn/nix-crab";
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
   };
 }
@@ -83,15 +83,16 @@ The home module imports the upstream typed `services.sls-steam.config` option (s
 setting is available with proper types) and ships the headcrab-compatible defaults
 (`PlayNotOwnedGames: yes`, `DisableCloud: no`, `SafeMode: no`). The generated `config.yaml` renders
 YAML 1.1 `yes`/`no` booleans (headcrab greps the literal `DisableCloud: no`). It also configures:
+
 - `services.flatpak` — remotes `flathub` + `cloudredirect`, package `org.cloudredirect.CloudRedirect`.
 - `home.file` — netsock and the CloudRedirect CLI.
 - `home.packages` — `cloud_redirect_cli` and `nix-crab-status`.
 
-| Option                                      | Description                                                                                             |
-| ------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `programs.nix-crab.slssteam.manageConfig`   | Whether Nix manages `~/.config/SLSsteam/config.yaml` (default `false`, leaving the file unmanaged so external tools like SteaMidra can edit it). |
-| `programs.nix-crab.steamidra.enable`        | Enable SteaMidra (SFF) desktop app (.NET 9 AppImage wrapper with desktop entry and icon).                |
-| `programs.nix-crab.accela.enable`           | Enable ACCELA desktop app (Enter The Wired AppImage with desktop entry, icon and a seeded `ACCELA.conf`). |
+| Option                                    | Description                                                                                                                                      |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `programs.nix-crab.slssteam.manageConfig` | Whether Nix manages `~/.config/SLSsteam/config.yaml` (default `false`, leaving the file unmanaged so external tools like SteaMidra can edit it). |
+| `programs.nix-crab.steamidra.enable`      | Enable SteaMidra (SFF) desktop app (.NET 9 AppImage wrapper with desktop entry and icon).                                                        |
+| `programs.nix-crab.accela.enable`         | Enable ACCELA desktop app (Enter The Wired AppImage with desktop entry, icon and a seeded `ACCELA.conf`).                                        |
 
 ## Updating
 
@@ -214,6 +215,7 @@ A huge thank you to the developers of the projects that make this declarative Ni
 This repository was created and is maintained by a **13-year-old NixOS enthusiast** (who knows that while this project's setup is anything but optimal, it works perfectly and gets the job done!), developed and polished with the help of the **[opencode](https://github.com/anomalyco/opencode)** AI assistant.
 
 Project Credits:
+
 - **[SLSsteam](https://github.com/AceSLS/SLSsteam)** (by AceSLS) — for the incredible Steam injection capability.
 - **[CloudRedirect](https://github.com/Selectively11/CloudRedirect)** (by Selectively11) — for the reliable cloud save syncing.
 - **[SteaMidra (SFF)](https://github.com/Midrags/SFF)** (by Midrags) — for the powerful configuration and account manager.
