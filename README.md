@@ -6,6 +6,11 @@ Installs and wires up [SLSsteam](https://github.com/AceSLS/SLSsteam) (play unloc
 and the optional [steamnetsock-patch](https://github.com/yesyes0649/steamnetsock-patch) (multiplayer fix),
 plus a client-downgrade tool — all from a single flake.
 
+On top of that base, two client-side stacks are available, and they are mutually exclusive:
+[Millennium](#millennium-optional) for themes and plugins, or
+[LuaTools](#luatools-slsteam-moon--lumen) via slsteam-moon + Lumen. Both want Steam's CEF debugging
+endpoint.
+
 ## Features
 
 - **SLSsteam** injected into the native Steam package via `LD_AUDIT` (`programs.steam` override) — no
@@ -19,8 +24,12 @@ plus a client-downgrade tool — all from a single flake.
 - **SteaMidra (SFF)** (optional) — .NET 9 AppImage for managing Steam accounts, tokens and configuration.
 - **ACCELA** (optional) — Qt depot-downloader GUI from the Enter The Wired bundle, configured to hand
   its games to SLSsteam.
-- **Millennium** (optional) — Steam client modding framework (themes/plugins), applied as a `pkgs.steam`
-  overlay so it stacks with the SLSsteam injection instead of fighting it.
+- **Millennium** (optional) — Steam client modding framework, applied as a `pkgs.steam` overlay so it
+  stacks with the SLSsteam injection instead of fighting it. Plugins and themes install declaratively
+  by store ID.
+- **slsteam-moon + LuaTools** (optional) — the alternative injection: a SLSsteam fork with a native
+  Lua manifest importer, built from source, plus Lumen and the LuaTools plugin under
+  `~/.local/share/Lumen`. Replaces Millennium, not additive to it.
 - **Client downgrade** (`nix-crab-downgrade`) — pins the Steam client to headcrab's compatible build
   using `dlm` + `dgsc` + `-overridepackageurl`.
 - **`nix-crab-status`** — diagnostic command showing client version, SLSsteam config, netsock,
@@ -76,7 +85,9 @@ they stay in sync.
 | ---------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
 | `programs.nix-crab.slssteam.enable`      | Enable SLSsteam injection into the native Steam package. Implies `programs.steam.enable = true`.           |
 | `programs.nix-crab.slssteam.extraEnv`    | Extra environment variables merged into the Steam override (used by CloudRedirect for `LD_PRELOAD`).       |
+| `programs.nix-crab.slssteam-moon.enable` | Switch injection to [slsteam-moon](https://github.com/swwayps/slsteam-moon) (SLSsteam fork with a Lua manifest importer) instead of upstream SLSsteam. Takes precedence if both are enabled; built from source, so expect a 32-bit compile. |
 | `programs.nix-crab.cloudredirect.enable` | Enable CloudRedirect: enables the Flatpak service and sets `LD_PRELOAD` to the pinned `cloud_redirect.so`. |
+| `programs.nix-crab.cloudredirect.moon.enable` | Use the [cloudredirect-moon](https://github.com/swwayps/cloudredirect-moon) hook (scans `stplug-in`/`luaappids.yaml`) instead of upstream CloudRedirect. Opt-in, for the LuaTools stack. |
 | `programs.nix-crab.millennium.enable`    | Replace `pkgs.steam` with `millennium-steam` via overlay. Combine with `slssteam.enable`.                   |
 | `programs.nix-crab.downgrade.enable`     | Add the `nix-crab-downgrade` script to `environment.systemPackages`.                                       |
 | `programs.nix-crab.downgrade.package`    | Override the wrapper script.                                                                               |
@@ -84,9 +95,12 @@ they stay in sync.
 ### `homeModules.default`
 
 The home module imports the upstream typed `services.sls-steam.config` option (so every SLSsteam
-setting is available with proper types) and ships the headcrab-compatible defaults
-(`PlayNotOwnedGames: yes`, `DisableCloud: no`, `SafeMode: no`). The generated `config.yaml` renders
-YAML 1.1 `yes`/`no` booleans (headcrab greps the literal `DisableCloud: no`). It also configures:
+setting is available with proper types) and sets headcrab-compatible defaults with `mkDefault`:
+`PlayNotOwnedGames = true`, `DisableCloud = false`, plus the keys SLSsteam reads but the typed module
+does not declare (`MaxSchemaTries`, `FakeName`, `DisableUpdates`, …) — without those it warns about
+"Config loading errors" on every start. Those values only reach disk when
+`slssteam.manageConfig = true`; by default the file is left to whoever else edits it. It also
+configures:
 
 - `services.flatpak` — remotes `flathub` + `cloudredirect`, package `org.cloudredirect.CloudRedirect`.
 - `home.file` — netsock and the CloudRedirect CLI.
@@ -97,6 +111,8 @@ YAML 1.1 `yes`/`no` booleans (headcrab greps the literal `DisableCloud: no`). It
 | `programs.nix-crab.slssteam.manageConfig` | Whether Nix manages `~/.config/SLSsteam/config.yaml` (default `false`, leaving the file unmanaged so external tools like SteaMidra can edit it). |
 | `programs.nix-crab.steamidra.enable`      | Enable SteaMidra (SFF) desktop app (.NET 9 AppImage wrapper with desktop entry and icon).                                                        |
 | `programs.nix-crab.accela.enable`         | Enable ACCELA desktop app (Enter The Wired AppImage with desktop entry, icon and a seeded `ACCELA.conf`).                                        |
+| `programs.nix-crab.luatools.enable`       | Home side of the LuaTools stack: installs Lumen (backend) + the LuaTools plugin into `~/.local/share/Lumen`, provides a `lumen` command, and shadows `steam` with a wrapper that auto-starts Lumen when Steam launches. Requires `slssteam-moon.enable` on the NixOS side. |
+| `programs.nix-crab.cloudredirect.moon.enable` | Home side of the same switch: points `~/.local/share/CloudRedirect/cloud_redirect.so` at the moon hook so the app's status matches what is injected. Set it together with the NixOS option. |
 | `programs.nix-crab.millennium.plugins`    | Millennium plugin IDs from [steambrew.app/plugins](https://steambrew.app/plugins); installed into `~/.local/share/millennium/plugins`.           |
 | `programs.nix-crab.millennium.themes`     | Millennium themes from [steambrew.app/themes](https://steambrew.app/themes) by ID, name or repo; installed into `~/.steam/steam/millennium/themes`. |
 
@@ -111,9 +127,9 @@ That is all. SLSsteam, CloudRedirect, netsock and the CloudRedirect CLI all trac
 releases through the locked inputs. The Steam client updates itself on next launch.
 
 > **Note:** If a Steam client update briefly breaks SLSsteam, the SLSsteam project usually fixes it
-> quickly — the next `nix flake update` picks the fix up. The `config.yaml` deliberately sets
-> `SafeMode: no` (SafeMode is intended for Steam Deck gamemode and can wrongly disable SLSsteam on
-> desktop).
+> quickly — the next `nix flake update` picks the fix up. `SafeMode` is not set by this flake;
+> if you turn it on yourself, be aware it is meant for Steam Deck gamemode and can wrongly disable
+> SLSsteam on desktop. `nix-crab-status` prints the value in effect.
 
 ## CloudRedirect app status
 
@@ -257,11 +273,84 @@ Downloaded at activation, not with `fetchzip`: both stores serve an addon's newe
 hash would break on every upstream release. They also land as real directories rather than store
 symlinks, because Millennium writes into these folders.
 
-### Notes
+### Risks and limits
 
 Millennium loads by symlinking its bootstrap over `libXtst.so.6` in `~/.local/share/Steam/ubuntu12_*`.
 It does not touch game processes, so it is irrelevant to VAC — but a Steam client update can break the
-hook, and untrusted third-party plugins run unsandboxed with your user's rights.
+hook, and untrusted third-party plugins run unsandboxed with your user's rights. Millennium also cannot
+be combined with the LuaTools stack (`slssteam-moon.enable` + `luatools.enable`) — both want Steam's
+CEF debugging endpoint; see the LuaTools section below.
+
+## LuaTools (slsteam-moon + Lumen)
+
+Upstream's LuaTools Millennium plugin is end-of-support and its new app is Windows-only. The maintained
+Linux path is the [slsteam-moon](https://github.com/swwayps/slsteam-moon) stack from the same maintainer:
+a SLSsteam fork with a native Lua-manifest importer, plus [Lumen](https://github.com/swwayps/lumen) (a
+static Lua backend) and the LuaTools plugin port.
+
+Upstream SLSsteam stays the default. `slssteam-moon.enable` swaps the Steam injection to slsteam-moon
+(which self-injects via `LD_AUDIT`, exactly like `slssteam.enable`):
+
+```nix
+programs.nix-crab.slssteam-moon.enable = true;
+```
+
+The LuaTools frontend is separate: the home-module `luatools.enable` installs Lumen + the plugin into
+`~/.local/share/Lumen` and provides the `lumen` command. It does **not** switch the injection — set
+`slssteam-moon.enable` on the NixOS side for that (Lumen's UI drives slsteam-moon's Lua manifest
+importer, so upstream SLSsteam won't do):
+
+```nix
+# NixOS module — inject slsteam-moon instead of upstream SLSsteam:
+programs.nix-crab.slssteam-moon.enable = true;
+# NixOS module — cloud saves for LuaTools games need the moon hook (opt-in).
+# `moon` only picks the variant; CloudRedirect itself still has to be enabled:
+programs.nix-crab.cloudredirect.enable = true;
+programs.nix-crab.cloudredirect.moon.enable = true;
+
+# home module — installs Lumen + the plugin into ~/.local/share/Lumen:
+programs.nix-crab.luatools.enable = true;
+# home module — keep the CloudRedirect app status on the same hook:
+programs.nix-crab.cloudredirect.moon.enable = true;
+```
+
+Enabling `luatools` also touches `~/.steam/steam/.cef-enable-remote-debugging` on activation — Steam
+only exposes the endpoint when that marker exists, and it is read at client startup, so restart Steam
+after the first switch.
+
+Lumen and the plugin are pinned by git rev, not the versionless `releases/latest` URLs (those change
+content on every release and would break the lock's narHash).
+
+With `luatools.enable` set, launching Steam starts Lumen automatically: the module shadows the
+`steam` command with a wrapper that starts Steam, waits for slsteam-moon to publish its CEF
+remote-debugging port to `~/.local/share/Lumen/cef_port` (a free loopback port, rewritten from
+Steam's hard-coded 8080), then runs Lumen against it — the binary runs through `steam-run` on NixOS.
+This covers both the `steam` command and Steam's desktop entry (both resolve the `steam` binary on
+`PATH`). The `lumen` command remains for attaching Lumen to an already-running Steam. slsteam-moon
+reads Lua manifests from `~/.steam/steam/config/stplug-in/`.
+
+> **Games do not land in `~/.config/SLSsteam/config.yaml`.** slsteam-moon deprecated the
+> `AdditionalApps` section there — it is read only for backward compatibility. Added games are
+> `<appid>.lua` files in `~/.steam/steam/config/stplug-in/` (the LuaTools plugin writes those), and
+> manual additions go in `~/.config/SLSsteam/luaappids.yaml` as an `AdditionalApps` list. If you
+> were checking `config.yaml` for your games, look at those two places instead — an empty
+> `AdditionalApps` in `config.yaml` is expected, not a sign that the import failed.
+
+> **Cloud saves for LuaTools games need the patched CloudRedirect hook — opt in.** Upstream
+> `cloud_redirect.so` reads the game list only from `config.yaml`'s `AdditionalApps`, so it never
+> sees stplug-in games. For the LuaTools stack, enable [cloudredirect-moon](https://github.com/swwayps/cloudredirect-moon),
+> which additionally scans `stplug-in` and `luaappids.yaml` (set `programs.nix-crab.cloudredirect.moon.enable`
+> in both modules). It still reads the legacy `config.yaml` list, so it also covers upstream
+> SLSsteam — but it is opt-in and only needed for LuaTools; upstream CloudRedirect stays the default.
+
+> **Do not combine with Millennium.** Lumen talks to Steam over the CEF remote-debugging **port**;
+> Millennium grabs the same endpoint by launching `steamwebhelper` with `--remote-debugging-pipe`, so
+> no TCP port exists, `~/.local/share/Lumen/cef_port` is never written, and Lumen cannot attach. The
+> two stacks are mutually exclusive: either `millennium.enable` (themes/plugins) or
+> `slssteam-moon.enable` + `luatools.enable` (LuaTools), not both. (The old LuaTools Millennium plugin
+> is end-of-support anyway — this flake's LuaTools path is the maintained one.) If you see
+> `--remote-debugging-pipe` on the `steamwebhelper` process, Millennium is holding the endpoint and
+> LuaTools will not work.
 
 ## Comparison to h3adcr-b
 
@@ -300,3 +389,5 @@ Project Credits:
 - **[SteaMidra (SFF)](https://github.com/Midrags/SFF)** (by Midrags) — for the powerful configuration and account manager.
 - **[steamnetsock-patch](https://github.com/yesyes0649/steamnetsock-patch)** (by yesyes0649) — for the multiplayer fixes.
 - **[Millennium](https://github.com/SteamClientHomebrew/Millennium)** (by Steam Homebrew) — for the client themes and plugins, and for shipping its own Nix package.
+- **[slsteam-moon](https://github.com/swwayps/slsteam-moon), [Lumen](https://github.com/swwayps/lumen) and the [LuaTools port](https://github.com/swwayps/luatools-moon)** (by swwayps) — for keeping the LuaTools workflow alive on Linux.
+- **[ACCELA / Enter The Wired](https://github.com/ciscosweater/enter-the-wired)** (by ciscosweater) — for the depot downloader this flake wraps.

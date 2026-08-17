@@ -3,6 +3,7 @@
   nix-flatpak,
   steamnetsock,
   cloudredirect,
+  cloudredirect-moon,
   cloudredirect-cli,
 }: {
   pkgs,
@@ -61,6 +62,27 @@
     echo "Netsock:        $([ -f "$HOME/.config/SLSsteam/tools/netsock/netsock.so" ] && echo present || echo missing)"
 
     echo
+    echo "=== Games (slsteam-moon / LuaTools) ==="
+    # slsteam-moon does NOT write added games into config.yaml's AdditionalApps
+    # (that section is deprecated). Games are <appid>.lua files in Steam's
+    # stplug-in dir, plus manual appids in luaappids.yaml.
+    STPLUG=""
+    for root in "$HOME/.steam/steam" "$HOME/.steam/debian-installation" "$HOME/.local/share/Steam"; do
+      if [ -d "$root/config/stplug-in" ]; then STPLUG="$root/config/stplug-in"; break; fi
+    done
+    if [ -n "$STPLUG" ]; then
+      COUNT=$(find "$STPLUG" -maxdepth 1 -name '*.lua' 2>/dev/null | wc -l | tr -d ' ')
+      echo "stplug-in:      $COUNT lua manifests ($STPLUG)"
+    else
+      echo "stplug-in:      missing (no Steam root with config/stplug-in)"
+    fi
+    if [ -f "$HOME/.config/SLSsteam/luaappids.yaml" ]; then
+      echo "luaappids.yaml: present (manual AdditionalApps list)"
+    else
+      echo "luaappids.yaml: none"
+    fi
+
+    echo
     echo "=== CloudRedirect ==="
     # Both spellings: SLSsteam and SteaMidra write YAML 1.2 true/false, a
     # hand-edited or headcrab-era config carries YAML 1.1 yes/no.
@@ -96,6 +118,13 @@ in {
     '';
   };
 
+  options.programs.nix-crab.cloudredirect.moon.enable = lib.mkEnableOption ''
+    the cloudredirect-moon hook instead of upstream CloudRedirect for the
+    ~/.local/share/CloudRedirect/cloud_redirect.so link. Must match the NixOS
+    module's programs.nix-crab.cloudredirect.moon.enable. Only enable for the
+    LuaTools stack.
+  '';
+
   config = {
     # headcrab-equivalent defaults: PlayNotOwnedGames on, DisableCloud off,
     # SafeMode off (SafeMode self-blocks on desktop). mkDefault so user config
@@ -114,6 +143,14 @@ in {
       DepotBlacklist = lib.mkDefault [];
       ManifestIds = lib.mkDefault {};
       SteamIdOverride = lib.mkDefault {};
+
+      # Upstream's C++ renamed LogLevel -> LogLevels (bitwise flags, 0xff = all
+      # levels) and added CDKeys, but its own typed module still declares only
+      # the old LogLevel enum -- so both keys are missing from the generated
+      # file and SLSsteam reports "Missing LogLevels" / "Missing CDKeys" on
+      # every start. Drop these two once the typed module catches up.
+      LogLevels = lib.mkDefault 255;
+      CDKeys = lib.mkDefault {};
     };
 
     # Only manage config.yaml when explicitly enabled. Otherwise the typed
@@ -159,10 +196,12 @@ in {
         "${cloudredirectCli}/bin/cloud_redirect_cli";
       # Same deal for CloudRedirect's own deploy check: it stats
       # $XDG_DATA_HOME/CloudRedirect/cloud_redirect.so and reports "failed to
-      # deploy" without it. The .so injected into Steam is still the LD_PRELOAD
-      # from the flake input (modules/cloudredirect.nix) — this is the same
-      # store path, just where the app looks for it.
-      ".local/share/CloudRedirect/cloud_redirect.so".source = cloudredirect;
+      # deploy" without it. Follow the same hook choice as the LD_PRELOAD in
+      # modules/cloudredirect.nix so the app's status matches what is injected.
+      ".local/share/CloudRedirect/cloud_redirect.so".source =
+        if config.programs.nix-crab.cloudredirect.moon.enable
+        then "${cloudredirect-moon}/cloud_redirect.so"
+        else cloudredirect;
     };
 
     home.packages = [cloudredirectCli nixCrabStatus];

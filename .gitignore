@@ -1,4 +1,5 @@
 .direnv/
+.freebuff/
 result
 result-*
 .envrc.private

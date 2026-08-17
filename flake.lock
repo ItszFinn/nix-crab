@@ -36,6 +36,54 @@
         "url": "https://github.com/Selectively11/h3adcr-b/releases/download/linux-test/cloud_redirect_cli"
       }
     },
+    "cloudredirect-moon": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1786461318,
+        "narHash": "sha256-iMf3iBPDJStVarW1PNEcrBYF0cd83T9FeSsWd6iaEgc=",
+        "owner": "swwayps",
+        "repo": "cloudredirect-moon",
+        "rev": "f07a3f59fec0e8bf086e8951e404f373c3bc8dd9",
+        "type": "github"
+      },
+      "original": {
+        "owner": "swwayps",
+        "repo": "cloudredirect-moon",
+        "type": "github"
+      }
+    },
+    "luatools-moon": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1786929252,
+        "narHash": "sha256-iIm9tNW7PenZ+MZ3tt7n8E5300NQDf8faPUfCpSrb1k=",
+        "owner": "swwayps",
+        "repo": "luatools-moon",
+        "rev": "c8c102a9f19a0b32435cf939304f7856005856c1",
+        "type": "github"
+      },
+      "original": {
+        "owner": "swwayps",
+        "repo": "luatools-moon",
+        "type": "github"
+      }
+    },
+    "lumen": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1786755166,
+        "narHash": "sha256-B2m3bscR35tNgdExll5UE7AuKb86cZ0I4IcLFBSf9VY=",
+        "owner": "swwayps",
+        "repo": "lumen",
+        "rev": "8840f60d8b55515c0a38146951dc7d2615c5d00b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "swwayps",
+        "repo": "lumen",
+        "type": "github"
+      }
+    },
     "millennium": {
       "inputs": {
         "millennium-src": "millennium-src",
@@ -43,11 +91,11 @@
       },
       "locked": {
         "dir": "packages/nix",
-        "lastModified": 1786390927,
-        "narHash": "sha256-rG9VwNR5bZIOzjYRjuY0SRqfx37spn0QQywPgITszQY=",
+        "lastModified": 1786986821,
+        "narHash": "sha256-x/N2vNFDjBzIUFEBQlotMwXCJM8auIJzFZVCFGh1+uw=",
         "owner": "SteamClientHomebrew",
         "repo": "Millennium",
-        "rev": "816514f939ce8696ae8262b4e0c2123f593db08c",
+        "rev": "e7768c9b5865c35ff150073b438b3a6e385d806f",
         "type": "github"
       },
       "original": {
@@ -107,11 +155,11 @@
     },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1786599213,
-        "narHash": "sha256-yNJd40f11EzXBjSByCB7IPpeFFAdeoSKKM67dGkfFoU=",
+        "lastModified": 1786862985,
+        "narHash": "sha256-FBJRXmbGXiSUDvYEbfLYRkckayyZ6SK1UEqhCrIZ2Cs=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "0e251e24a4f24e036a084b6b4b2d2491af4167f4",
+        "rev": "e5bdc4a41d4c072fe1e3787eaa0320a384741d44",
         "type": "github"
       },
       "original": {
@@ -126,10 +174,14 @@
         "accela": "accela",
         "cloudredirect": "cloudredirect",
         "cloudredirect-cli": "cloudredirect-cli",
+        "cloudredirect-moon": "cloudredirect-moon",
+        "luatools-moon": "luatools-moon",
+        "lumen": "lumen",
         "millennium": "millennium",
         "nix-flatpak": "nix-flatpak",
         "nixpkgs": "nixpkgs_2",
         "sls-steam": "sls-steam",
+        "slsteam-moon": "slsteam-moon",
         "steamidra": "steamidra",
         "steamnetsock": "steamnetsock"
       }
@@ -141,11 +193,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1785830347,
-        "narHash": "sha256-LA56VXRcymN7w9lcDIkgnVTYf1nmb8scPGfTQ6tlHpU=",
+        "lastModified": 1786818912,
+        "narHash": "sha256-GFRGB8n84MuixVcyKnLRfGKO0YajxOjiEH/a5lixg1Q=",
         "owner": "AceSLS",
         "repo": "SLSsteam",
-        "rev": "a1b30e8183651a6d3a016365b18d8893964af7cc",
+        "rev": "01a3b1ed08bc8f33fc25ee12d2b6e191a9963b38",
         "type": "github"
       },
       "original": {
@@ -154,10 +206,26 @@
         "type": "github"
       }
     },
+    "slsteam-moon": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1786751350,
+        "narHash": "sha256-4pFej/xXjar5wJG88NyNhBw5PC68XR+V2O4EEjSWjY8=",
+        "owner": "swwayps",
+        "repo": "slsteam-moon",
+        "rev": "7ba753c8a2a06722e195747756a837b64718d358",
+        "type": "github"
+      },
+      "original": {
+        "owner": "swwayps",
+        "repo": "slsteam-moon",
+        "type": "github"
+      }
+    },
     "steamidra": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-ra7cNjCb30orl+m1b+DtQjYwnO3tzAzrtNwhUbMfIO8=",
+        "narHash": "sha256-WR+VjtMnNluq576Eq/s+ct8ZUJ1PF74RhYgrVUm8+2c=",
         "type": "file",
         "url": "https://api.github.com/repos/Midrags/SFF/tags"
       },
