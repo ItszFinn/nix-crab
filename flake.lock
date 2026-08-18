@@ -15,7 +15,7 @@
     "cloudredirect": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-zRQuVrba51qnqVSPW7sSkB9IvRKPjNaMo7sBQ4lnBfs=",
+        "narHash": "sha256-885yi32OEso1apSVNV9tdvSwx4tk+Taywrwfp9R6PPg=",
         "type": "file",
         "url": "https://github.com/Selectively11/CloudRedirect/releases/latest/download/cloud_redirect.so"
       },
@@ -91,11 +91,11 @@
       },
       "locked": {
         "dir": "packages/nix",
-        "lastModified": 1786986821,
-        "narHash": "sha256-x/N2vNFDjBzIUFEBQlotMwXCJM8auIJzFZVCFGh1+uw=",
+        "lastModified": 1786997133,
+        "narHash": "sha256-oefvOIPUZEQ9hHguR6kL0z1hR27ZbrFMclfQMI2KYAc=",
         "owner": "SteamClientHomebrew",
         "repo": "Millennium",
-        "rev": "e7768c9b5865c35ff150073b438b3a6e385d806f",
+        "rev": "a969edf744f9c82a96f80081e910e16bfc6b9dd0",
         "type": "github"
       },
       "original": {
