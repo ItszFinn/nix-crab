@@ -33,7 +33,10 @@ endpoint.
 - **Client downgrade** (`nix-crab-downgrade`) — pins the Steam client to headcrab's compatible build
   using `dlm` + `dgsc` + `-overridepackageurl`.
 - **`nix-crab-status`** — diagnostic command showing client version, SLSsteam config, netsock,
-  CloudRedirect status and update-blocking state.
+  CloudRedirect status (including which hook is wired up), the active injection fork and
+  LuaTools/Lumen state. `--json` prints the same as machine-readable JSON.
+- **`nix-crab-update`** — one-command maintenance: `nix flake update`, rebuild through
+  `nh`/`nixos-rebuild` + `home-manager`, then prints the fresh `nix-crab-status`.
 - **Zero-maintenance updates** — by default the Steam client is _not_ frozen: it follows updates on its
   own, and SLSsteam/CloudRedirect/netsock can be updated instantly by running `nix flake update` in your own configuration.
 
@@ -112,6 +115,7 @@ configures:
 | `programs.nix-crab.steamidra.enable`      | Enable SteaMidra (SFF) desktop app (.NET 9 AppImage wrapper with desktop entry and icon).                                                        |
 | `programs.nix-crab.accela.enable`         | Enable ACCELA desktop app (Enter The Wired AppImage with desktop entry, icon and a seeded `ACCELA.conf`).                                        |
 | `programs.nix-crab.luatools.enable`       | Home side of the LuaTools stack: installs Lumen (backend) + the LuaTools plugin into `~/.local/share/Lumen`, provides a `lumen` command, and shadows `steam` with a wrapper that auto-starts Lumen when Steam launches. Requires `slssteam-moon.enable` on the NixOS side. |
+| `programs.nix-crab.luatools.lumenService` | Run Lumen as a systemd user service (`nix-crab-lumen`, starts at login, `Restart=on-failure`) instead of the `steam`-wrapper sidecar; disables the `steam` shadow. Default `false`. |
 | `programs.nix-crab.cloudredirect.moon.enable` | Home side of the same switch: points `~/.local/share/CloudRedirect/cloud_redirect.so` at the moon hook so the app's status matches what is injected. Set it together with the NixOS option. |
 | `programs.nix-crab.millennium.plugins`    | Millennium plugin IDs from [steambrew.app/plugins](https://steambrew.app/plugins); installed into `~/.local/share/millennium/plugins`.           |
 | `programs.nix-crab.millennium.themes`     | Millennium themes from [steambrew.app/themes](https://steambrew.app/themes) by ID, name or repo; installed into `~/.steam/steam/millennium/themes`. |
@@ -122,6 +126,11 @@ configures:
 nix flake update
 sudo nixos-rebuild switch   # or: home-manager switch
 ```
+
+This repository also runs the [update-flake-lock](https://github.com/DeterminateSystems/update-flake-lock)
+GitHub Action (weekly + manual dispatch): it opens a pull request with a refreshed `flake.lock`,
+which CI then validates with `nix flake check` before merge. If you host your own copy, the same
+action keeps the `nix-crab` input current on your side.
 
 That is all. SLSsteam, CloudRedirect, netsock and the CloudRedirect CLI all track their upstream
 releases through the locked inputs. The Steam client updates itself on next launch.
@@ -193,7 +202,42 @@ nix-crab-status
 ```
 
 Prints the Steam client version, SLSsteam config values, netsock presence, CloudRedirect status
-(Flatpak + CLI) and whether client updates are blocked.
+(Flatpak + CLI), whether client updates are blocked, the injection fork observed in a running
+Steam (`slsteam-moon` vs upstream SLSsteam) and the LuaTools/Lumen state (installed, plugin,
+running, CEF endpoint attached). The CloudRedirect `Hook:` line reports which `cloud_redirect.so`
+is wired up (upstream vs moon) by resolving the `~/.local/share` link — the same choice the
+injection uses, so it shows what the game list scanner actually reads.
+
+`--json` emits the same data as one JSON object:
+
+```json
+{
+  "steam": {"version": "...", "manifest_note": "...", "updates_blocked": false},
+  "slssteam": {"config_present": true, "disable_cloud": "no", "play_not_owned": "yes",
+               "safe_mode": "no", "disable_cloud_duplicates": 2, "netsock_present": true},
+  "injection": "slsteam-moon (LuaTools)",
+  "games": {"stplug_in_dir": "/home/you/.steam/steam/config/stplug-in",
+            "lua_manifests": 3, "luaappids_yaml": false},
+  "cloudredirect": {"enabled": true, "hook": "moon (LuaTools)",
+                    "cli_present": true, "flatpak_installed": true},
+  "luatools": {"installed": true, "plugin_installed": true, "running": true, "cef_port": true}
+}
+```
+
+`stplug_in_dir` and `manifest_note` are empty strings when not applicable.
+
+## nix-crab-update
+
+```
+nix-crab-update
+```
+
+Runs `nix flake update` in the current directory, then switches with whatever is installed — `nh os
+switch` + `nh home switch` if `nh` is on `PATH`, otherwise `sudo nixos-rebuild switch --flake .`
+plus `home-manager switch --flake .` — and finally prints `nix-crab-status` so you see the updated
+versions in the same breath. Run it from your configuration repo (the one that imports
+`nix-crab`); it exits before touching anything if there is no `flake.nix` in `$PWD`. It needs the
+home module for the final status line; without it the rest still runs.
 
 ## SteaMidra (optional GUI)
 
@@ -328,6 +372,13 @@ Steam's hard-coded 8080), then runs Lumen against it — the binary runs through
 This covers both the `steam` command and Steam's desktop entry (both resolve the `steam` binary on
 `PATH`). The `lumen` command remains for attaching Lumen to an already-running Steam. slsteam-moon
 reads Lua manifests from `~/.steam/steam/config/stplug-in/`.
+
+If you prefer Lumen as a managed service instead of the `steam`-wrapper sidecar, set
+`programs.nix-crab.luatools.lumenService = true;` (home module). Lumen then starts at login under
+`systemctl --user` (unit `nix-crab-lumen`, `Restart=on-failure`) and the `steam` command is
+**not** shadowed — Steam launches plain and Lumen attaches on its own once the CEF port is
+published. The default keeps the wrapper, which only runs Lumen while Steam is used; the two modes
+are mutually exclusive by construction (the wrapper is dropped when the service is enabled).
 
 > **Games do not land in `~/.config/SLSsteam/config.yaml`.** slsteam-moon deprecated the
 > `AdditionalApps` section there — it is read only for backward compatibility. Added games are

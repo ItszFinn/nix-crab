@@ -6,7 +6,7 @@ NixOS/home-manager flake that reproduces h3adcr-b (SLSsteam + CloudRedirect + op
 
 Hybrid flake with two independent module outputs in `flake.nix`:
 - `nixosModules.default` — imports `slssteam.nix` (Steam package override, `LD_AUDIT`), `cloudredirect.nix` (`services.flatpak.enable` + `LD_PRELOAD` via `slssteam.extraEnv`), `downgrade.nix`.
-- `homeModules.default` — imports `home.nix` (hand-written `config.yaml`, netsock + CLI via `home.file`, CloudRedirect Flatpak via nix-flatpak, `nix-crab-status`), `steamidra.nix`, `accela.nix`.
+- `homeModules.default` — imports `home.nix` (typed sls-steam config, netsock + CLI via `home.file`, CloudRedirect Flatpak via nix-flatpak, `nix-crab-status` with `--json` and LuaTools/moon/injection sections, `nix-crab-update`), `steamidra.nix`, `accela.nix`.
 
 Modules are partial applications: `flake.nix` threads flake inputs in via `(import ./modules/x.nix {inherit input;})`. When adding a new module, follow that pattern — do not use `inputs` in the module body.
 
@@ -18,7 +18,8 @@ Modules are partial applications: `flake.nix` threads flake inputs in via `(impo
 - **Two-module design by explicit user request.** The user rejected auto-wiring home-manager into the NixOS module and rejected integration/assertion modules (`homeModuleImported`, `nixosModuleImported`, a `programs.nix-crab.user` option). Do not reintroduce flags, assertions, or `home-manager.nixosModules.home-manager` wiring.
 - **Steam client follows updates by default.** `steam.cfg` is only written by the downgrade script (`if [ ! -f ... ]`), not by home.nix.
 - **netsock is never injected globally** — it's placed at `~/.config/SLSsteam/tools/netsock/netsock.so` for per-game launch option `LD_AUDIT=...netsock.so %command%`, never with anti-cheat.
-- Commands are named `nix-crab-*` (`nix-crab-downgrade`, `nix-crab-status`, internal `nix-crab-dgsc`, `nix-crab-dlm`). External URLs in `downgrade.nix` (e.g. `SteamTracking/.../headcrab/...`) are untouched — only user-facing names changed.
+- Commands are named `nix-crab-*` (`nix-crab-downgrade`, `nix-crab-status`, `nix-crab-update`, internal `nix-crab-dgsc`, `nix-crab-dlm`). External URLs in `downgrade.nix` (e.g. `SteamTracking/.../headcrab/...`) are untouched — only user-facing names changed.
+- **`luatools.lumenService` is an opt-in alternative to the `steam`-wrapper sidecar** — with it enabled, Lumen runs as a `systemd --user` service (`nix-crab-lumen`, starts at login, `Restart=on-failure`) and the `steam` shadow-wrapper is dropped. The wrapper stays the default; never run both (the wrapper is conditionally excluded when the service is on).
 
 ## Verification
 

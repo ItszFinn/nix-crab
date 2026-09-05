@@ -39,6 +39,14 @@ in {
     steam-run, which the `lumen` wrapper needs).
   '';
 
+  options.programs.nix-crab.luatools.lumenService = lib.mkEnableOption ''
+    a systemd user service for Lumen instead of the steam-wrapper sidecar.
+    With this enabled Lumen starts at login (unit nix-crab-lumen,
+    Restart=on-failure) and the `steam` command is no longer shadowed, so
+    Steam launches plain -- Lumen attaches on its own once the CEF port
+    appears. Default keeps the wrapper behaviour.
+  '';
+
   config = lib.mkIf cfg.enable {
     home.packages = [
       # Convenience entry point for attaching to an already-running Steam. The
@@ -48,11 +56,14 @@ in {
       (pkgs.writeShellScriptBin "lumen" ''
         exec "$HOME/.local/share/Lumen/lumen" "$@"
       '')
-
-      # Shadow the system `steam` so that launching Steam -- via the `steam`
-      # command or its desktop entry -- also brings up Lumen. This only exists
-      # while luatools.enable is set, so it is exactly the "when Lumen is used"
-      # behaviour.
+    ]
+    # Shadow the system `steam` so that launching Steam -- via the `steam`
+    # command or its desktop entry -- also brings up Lumen. This only exists
+    # while luatools.enable is set, so it is exactly the "when Lumen is used"
+    # behaviour. With lumenService enabled the systemd unit replaces this
+    # wrapper: two independent start paths (wrapper spawn + active unit) would
+    # fight over the same CEF target.
+    ++ lib.optionals (!config.programs.nix-crab.luatools.lumenService) [
       (pkgs.writeShellScriptBin "steam" ''
         # The real Steam launcher is the first `steam` on PATH that is not this
         # very wrapper (our own profile dir shadows the system one). -ef skips
@@ -209,5 +220,25 @@ EOF
         echo "nix-crab: LuaTools plugin is up to date"
       fi
     '';
+
+    # Systemd-managed alternative to the steam-wrapper sidecar (opt-in via
+    # programs.nix-crab.luatools.lumenService). The unit starts at login and
+    # stays up (Restart=on-failure); Lumen polls for Steam's CEF port itself
+    # (lua/cefport.lua), so it attaches as soon as Steam is up without the
+    # wrapper timing anything. ExecStart points at the activation-written shim,
+    # which is what makes Lumen runnable (steam-run sandbox, loader env unset).
+    systemd.user.services."nix-crab-lumen" =
+      lib.mkIf config.programs.nix-crab.luatools.lumenService {
+        Unit = {
+          Description = "Lumen backend for LuaTools (slsteam-moon)";
+          After = ["graphical-session.target"];
+        };
+        Service = {
+          Type = "simple";
+          ExecStart = "${lumenDir}/lumen";
+          Restart = "on-failure";
+        };
+        Install.WantedBy = ["default.target"];
+      };
   };
 }

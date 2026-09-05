@@ -1,0 +1,32 @@
+name: update flake lock
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Weekly, Monday 04:17 UTC — keeps the pinned inputs
+    # (sls-steam, cloudredirect, moon, lumen, luatools-moon, steamnetsock,
+    # steamidra, accela, millennium, nixpkgs) following upstream releases.
+    - cron: "17 4 * * 1"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v16
+      - name: Update flake.lock
+        uses: DeterminateSystems/update-flake-lock@v24
+        with:
+          pr-title: "flake.lock: update inputs"
+          pr-body: |
+            Automated weekly flake.lock refresh.
+
+            CI runs `nix flake check` on this PR, so the updated inputs are
+            validated before merge. Millennium may be bumped too — its own
+            nested nixpkgs pin is internal and does not change.
