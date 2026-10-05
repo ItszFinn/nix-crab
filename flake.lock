@@ -15,7 +15,7 @@
     "cloudredirect": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-885yi32OEso1apSVNV9tdvSwx4tk+Taywrwfp9R6PPg=",
+        "narHash": "sha256-THlPEtlACX7zQQjLHNNNJip4dEimlyC7RqOvExgHAIs=",
         "type": "file",
         "url": "https://github.com/Selectively11/CloudRedirect/releases/latest/download/cloud_redirect.so"
       },
@@ -39,11 +39,11 @@
     "cloudredirect-moon": {
       "flake": false,
       "locked": {
-        "lastModified": 1786461318,
-        "narHash": "sha256-iMf3iBPDJStVarW1PNEcrBYF0cd83T9FeSsWd6iaEgc=",
+        "lastModified": 1789795755,
+        "narHash": "sha256-NRFl1KbdpvOBBf3ApwhmO1IcYMYokqrwFguxKkE6hZc=",
         "owner": "swwayps",
         "repo": "cloudredirect-moon",
-        "rev": "f07a3f59fec0e8bf086e8951e404f373c3bc8dd9",
+        "rev": "19da05507dc8294a744d74c04ba875d4ca3cf2f7",
         "type": "github"
       },
       "original": {
@@ -55,11 +55,11 @@
     "luatools-moon": {
       "flake": false,
       "locked": {
-        "lastModified": 1786929252,
-        "narHash": "sha256-iIm9tNW7PenZ+MZ3tt7n8E5300NQDf8faPUfCpSrb1k=",
+        "lastModified": 1790644298,
+        "narHash": "sha256-OSsUh7PfjqkqM+zwCNe4pfBsSaL3BKRvWhxO1Z4JXGA=",
         "owner": "swwayps",
         "repo": "luatools-moon",
-        "rev": "c8c102a9f19a0b32435cf939304f7856005856c1",
+        "rev": "2c739b5349a972bb1932ac9457b0acf91b09e044",
         "type": "github"
       },
       "original": {
@@ -71,11 +71,11 @@
     "lumen": {
       "flake": false,
       "locked": {
-        "lastModified": 1786755166,
-        "narHash": "sha256-B2m3bscR35tNgdExll5UE7AuKb86cZ0I4IcLFBSf9VY=",
+        "lastModified": 1789956874,
+        "narHash": "sha256-kop7QhX7HyXCGR4le8jGQNYncn2CgRIMqArYSRfJ1rU=",
         "owner": "swwayps",
         "repo": "lumen",
-        "rev": "8840f60d8b55515c0a38146951dc7d2615c5d00b",
+        "rev": "52475c3ec0bbe2bf0ccdd209d86a40d99a9881fa",
         "type": "github"
       },
       "original": {
@@ -87,15 +87,16 @@
     "millennium": {
       "inputs": {
         "millennium-src": "millennium-src",
-        "nixpkgs": "nixpkgs"
+        "nixpkgs": "nixpkgs",
+        "nixpkgs-bun": "nixpkgs-bun"
       },
       "locked": {
         "dir": "packages/nix",
-        "lastModified": 1786997133,
-        "narHash": "sha256-oefvOIPUZEQ9hHguR6kL0z1hR27ZbrFMclfQMI2KYAc=",
+        "lastModified": 1791044936,
+        "narHash": "sha256-+mNY2lHscvVa4KntAxuRMMFYMYxju06avIKyHooM8EE=",
         "owner": "SteamClientHomebrew",
         "repo": "Millennium",
-        "rev": "a969edf744f9c82a96f80081e910e16bfc6b9dd0",
+        "rev": "63c3928f0306edd83122c0f5b085a9b1a3d60f55",
         "type": "github"
       },
       "original": {
@@ -108,27 +109,27 @@
     "millennium-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1783268941,
-        "narHash": "sha256-MJLJ0I48HXgfOpISTAbDMYMUdWj9A6M+jGQz4uAvwyw=",
+        "lastModified": 1790436335,
+        "narHash": "sha256-ghYUa4gPLV/VOflM2zkl/gtdwLWHQpRxG4boQoj4yKM=",
         "owner": "SteamClientHomebrew",
         "repo": "Millennium",
-        "rev": "f37f05bdbd4727d873a1ad83ce72d062ef9a0c48",
+        "rev": "765aa8802f8a4d942ad8ac8323a9e0f233a50fa8",
         "type": "github"
       },
       "original": {
         "owner": "SteamClientHomebrew",
         "repo": "Millennium",
-        "rev": "f37f05bdbd4727d873a1ad83ce72d062ef9a0c48",
+        "rev": "765aa8802f8a4d942ad8ac8323a9e0f233a50fa8",
         "type": "github"
       }
     },
     "nix-flatpak": {
       "locked": {
-        "lastModified": 1783368811,
-        "narHash": "sha256-0H8jDwR4Kegb3heaTrH1ftbgKfZVDT8JE+46uXxDy/Q=",
+        "lastModified": 1790428548,
+        "narHash": "sha256-OsZ/I7v3ArCrk0XOUvkiU1dFtGtE1qZTHRGjvBXIKUU=",
         "owner": "gmodena",
         "repo": "nix-flatpak",
-        "rev": "20d42f0ee98c9fe9f85e8d1de474f1409ed10d05",
+        "rev": "f1f045fc8b35ff59f88982c1752d3f3a42ca6a61",
         "type": "github"
       },
       "original": {
@@ -139,27 +140,40 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1781577229,
-        "narHash": "sha256-lrp67w8AulE9Ks53n27I45ADSzbOCn4H+CNW1Ck8B+8=",
+        "lastModified": 1790769526,
+        "narHash": "sha256-6j4yqqBUvIbBn29k0y/2jqlv/YJd8CRkTBYhfm5Z/8c=",
+        "rev": "c9fe7d12cd78d1adcd12dd15e24432dde5b155a0",
+        "type": "tarball",
+        "url": "https://releases.nixos.org/nixpkgs/nixpkgs-26.11pre1082837.c9fe7d12cd78/nixexprs.tar.zst?lastModified=1790769526&rev=c9fe7d12cd78d1adcd12dd15e24432dde5b155a0"
+      },
+      "original": {
+        "type": "tarball",
+        "url": "https://channels.nixos.org/nixpkgs-unstable/nixexprs.tar.zst"
+      }
+    },
+    "nixpkgs-bun": {
+      "locked": {
+        "lastModified": 1790822859,
+        "narHash": "sha256-69xHQhAeMAD2wDXO7T2pcOZIF9Sga2W+JkmY2a11Ops=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "567a49d1913ce81ac6e9582e3553dd90a955875f",
+        "rev": "c59305bab2065cfecc4944690d9eedbb56f3a9fa",
         "type": "github"
       },
       "original": {
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "567a49d1913ce81ac6e9582e3553dd90a955875f",
+        "rev": "c59305bab2065cfecc4944690d9eedbb56f3a9fa",
         "type": "github"
       }
     },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1786862985,
-        "narHash": "sha256-FBJRXmbGXiSUDvYEbfLYRkckayyZ6SK1UEqhCrIZ2Cs=",
+        "lastModified": 1791048980,
+        "narHash": "sha256-KgItSKML8Xvte0B7/uGnBDsYzSnnKHcOaiUbgWBXLXw=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "e5bdc4a41d4c072fe1e3787eaa0320a384741d44",
+        "rev": "a7868a727837f3c09cee2ce0ca671c76b1589fed",
         "type": "github"
       },
       "original": {
@@ -193,11 +207,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1786818912,
-        "narHash": "sha256-GFRGB8n84MuixVcyKnLRfGKO0YajxOjiEH/a5lixg1Q=",
+        "lastModified": 1790865579,
+        "narHash": "sha256-c5pYwtlTd3l4RHh484COxuKIz/zkldL0Flxz3oBOSVM=",
         "owner": "AceSLS",
         "repo": "SLSsteam",
-        "rev": "01a3b1ed08bc8f33fc25ee12d2b6e191a9963b38",
+        "rev": "9c829a7ddae52b6fdeee37933a83e8d6f4b9f1c6",
         "type": "github"
       },
       "original": {
@@ -209,11 +223,11 @@
     "slsteam-moon": {
       "flake": false,
       "locked": {
-        "lastModified": 1786751350,
-        "narHash": "sha256-4pFej/xXjar5wJG88NyNhBw5PC68XR+V2O4EEjSWjY8=",
+        "lastModified": 1790643308,
+        "narHash": "sha256-EW1OUclAe72RWzkFxb41BjBKyfgyF79vDG2PBiTfC2c=",
         "owner": "swwayps",
         "repo": "slsteam-moon",
-        "rev": "7ba753c8a2a06722e195747756a837b64718d358",
+        "rev": "f50f28e416346e43c53b9317543fadfa9d0ccbfb",
         "type": "github"
       },
       "original": {
@@ -225,7 +239,7 @@
     "steamidra": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-WR+VjtMnNluq576Eq/s+ct8ZUJ1PF74RhYgrVUm8+2c=",
+        "narHash": "sha256-UwrSDHRqmUKb6LyJ6cxusF3HbQjfueswbtvE1akpvw4=",
         "type": "file",
         "url": "https://api.github.com/repos/Midrags/SFF/tags"
       },
