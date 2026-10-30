@@ -31,7 +31,10 @@
       url = "https://github.com/Selectively11/h3adcr-b/releases/download/linux-test/cloud_redirect_cli";
       flake = false;
     };
-    millennium.url = "github:SteamClientHomebrew/Millennium?dir=packages/nix";
+    millennium = {
+      url = "github:SteamClientHomebrew/Millennium?dir=packages/nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     nix-flatpak.url = "github:gmodena/nix-flatpak";
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     sls-steam = {
