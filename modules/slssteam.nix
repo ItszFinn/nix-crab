@@ -98,7 +98,17 @@ in {
         # device information", refuses to load i915/iris and falls back to
         # llvmpipe. Steam's 32-bit vgui2 gets no GLX visual and fatal-asserts
         # with "glXChooseVisual failed". A read-only bind is all it needs.
-        extraBwrapArgs = ["--ro-bind /sys /sys"];
+        #
+        # The FHS rootfs mixes glibcs: its own /usr/lib32 is glibc 2.42 while
+        # the 32-bit Mesa it ships (and 109 other libraries) carry a RUNPATH
+        # onto the system's glibc 2.44. Two libcs in one process make the
+        # stack canary fail with "*** stack smashing detected ***" and
+        # glXChooseVisual returns NULL. Pointing LD_LIBRARY_PATH at the
+        # system graphics stack keeps a single, consistent glibc.
+        extraBwrapArgs = [
+          "--ro-bind /sys /sys"
+          "--setenv LD_LIBRARY_PATH /run/opengl-driver-32/lib:/run/opengl-driver/lib"
+        ];
       };
     };
   };
