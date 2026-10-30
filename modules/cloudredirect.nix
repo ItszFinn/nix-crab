@@ -17,11 +17,26 @@
     '';
   };
 
-  config = lib.mkIf config.programs.nix-crab.cloudredirect.enable {
-    services.flatpak.enable = true;
-    programs.nix-crab.slssteam.extraEnv.LD_PRELOAD =
-      if config.programs.nix-crab.cloudredirect.moon.enable
+  config = let
+    cfg = config.programs.nix-crab;
+
+    # The upstream input is a bare flake input, so its store path is named
+    # "-source" and the file inside it has no stable name. LD_PRELOAD takes
+    # the path verbatim, so it happens to work, but any rename upstream
+    # breaks the hook silently. Stage it under the name the loader, the
+    # docs and `cloud_redirect --cli` all expect.
+    hook =
+      if cfg.cloudredirect.moon.enable
       then "${cloudredirect-moon}/cloud_redirect.so"
-      else "${cloudredirect}";
-  };
+      else "${cloudredirect}/cloud_redirect.so";
+
+    hookStaged = pkgs.runCommand "cloud_redirect.so" {} ''
+      mkdir -p "$out"
+      cp ${hook} "$out/cloud_redirect.so"
+    '';
+  in
+    lib.mkIf cfg.cloudredirect.enable {
+      services.flatpak.enable = true;
+      programs.nix-crab.slssteam.extraEnv.LD_PRELOAD = "${hookStaged}/cloud_redirect.so";
+    };
 }
