@@ -91,6 +91,14 @@ in {
             LD_AUDIT = "${sls}/library-inject.so:${sls}/SLSsteam.so";
           }
           // cfg.slssteam.extraEnv;
+        # The FHS wrapper never binds /sys: bubblewrap starts with a fresh
+        # mount namespace where /sys does not exist, and the auto-mount loop
+        # cannot bind a mountpoint onto itself. Mesa then cannot resolve
+        # /sys/dev/char/226:* or /sys/class/drm, reports "failed to retrieve
+        # device information", refuses to load i915/iris and falls back to
+        # llvmpipe. Steam's 32-bit vgui2 gets no GLX visual and fatal-asserts
+        # with "glXChooseVisual failed". A read-only bind is all it needs.
+        extraBwrapArgs = ["--ro-bind /sys /sys"];
       };
     };
   };
