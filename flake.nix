@@ -13,7 +13,7 @@
     # config.yaml's AdditionalApps.
     cloudredirect = {
       type = "file";
-      url = "https://github.com/Selectively11/CloudRedirect/releases/latest/download/cloud_redirect.so";
+      url = "https://github.com/crghofficial/CloudRedirect/releases/latest/download/cloud_redirect.so";
       flake = false;
     };
     # Optional hook for the LuaTools stack, opt-in via
@@ -28,7 +28,7 @@
     };
     cloudredirect-cli = {
       type = "file";
-      url = "https://github.com/Selectively11/h3adcr-b/releases/download/linux-test/cloud_redirect_cli";
+      url = "https://github.com/crghofficial/CloudRedirect/releases/latest/download/cloud_redirect_cli";
       flake = false;
     };
     millennium = {
