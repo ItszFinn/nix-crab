@@ -355,7 +355,7 @@ in {
         }
         {
           name = "cloudredirect";
-          location = "https://raw.githubusercontent.com/Selectively11/CloudRedirect/refs/heads/gh-pages/cloudredirect.flatpakrepo";
+          location = "https://raw.githubusercontent.com/crghofficial/cloudredirect/refs/heads/gh-pages/cloudredirect.flatpakrepo";
         }
       ];
     };

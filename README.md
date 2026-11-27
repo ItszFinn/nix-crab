@@ -2,7 +2,7 @@
 
 Declarative [h3adcr-b](https://github.com/Deadboy666/h3adcr-b/)-equivalent for NixOS.
 Installs and wires up [SLSsteam](https://github.com/AceSLS/SLSsteam) (play unlocked/not-owned games),
-[CloudRedirect](https://github.com/Selectively11/CloudRedirect) (cloud saves for non-owned/"lua" games)
+[CloudRedirect](https://github.com/crghofficial/CloudRedirect) (cloud saves for non-owned/"lua" games)
 and the optional [steamnetsock-patch](https://github.com/yesyes0649/steamnetsock-patch) (multiplayer fix),
 plus a client-downgrade tool — all from a single flake.
 
@@ -439,7 +439,7 @@ This repository was created and is maintained by a **13-year-old NixOS enthusias
 Project Credits:
 
 - **[SLSsteam](https://github.com/AceSLS/SLSsteam)** (by AceSLS) — for the incredible Steam injection capability.
-- **[CloudRedirect](https://github.com/Selectively11/CloudRedirect)** (by Selectively11) — for the reliable cloud save syncing.
+- **[CloudRedirect](https://github.com/crghofficial/CloudRedirect)** (by Selectively11) — for the reliable cloud save syncing.
 - **[SteaMidra (SFF)](https://github.com/Midrags/SFF)** (by Midrags) — for the powerful configuration and account manager.
 - **[steamnetsock-patch](https://github.com/yesyes0649/steamnetsock-patch)** (by yesyes0649) — for the multiplayer fixes.
 - **[Millennium](https://github.com/SteamClientHomebrew/Millennium)** (by Steam Homebrew) — for the client themes and plugins, and for shipping its own Nix package.
