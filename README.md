@@ -91,7 +91,8 @@ they stay in sync.
 | `programs.nix-crab.slssteam-moon.enable` | Switch injection to [slsteam-moon](https://github.com/swwayps/slsteam-moon) (SLSsteam fork with a Lua manifest importer) instead of upstream SLSsteam. Takes precedence if both are enabled; built from source, so expect a 32-bit compile. |
 | `programs.nix-crab.cloudredirect.enable` | Enable CloudRedirect: enables the Flatpak service and sets `LD_PRELOAD` to the pinned `cloud_redirect.so`. |
 | `programs.nix-crab.cloudredirect.moon.enable` | Use the [cloudredirect-moon](https://github.com/swwayps/cloudredirect-moon) hook (scans `stplug-in`/`luaappids.yaml`) instead of upstream CloudRedirect. Opt-in, for the LuaTools stack. |
-| `programs.nix-crab.millennium.enable`    | Replace `pkgs.steam` with `millennium-steam` via overlay. Combine with `slssteam.enable`.                   |
+| `programs.nix-crab.millennium.enable`    | Replace `pkgs.steam` with `millennium-steam` via an overlay. Combine with `slssteam.enable`.                   |
+| `programs.nix-crab.millennium.bunBaseline` | Use baseline Bun for Millennium's builds on CPUs without AVX2 support. |
 | `programs.nix-crab.downgrade.enable`     | Add the `nix-crab-downgrade` script to `environment.systemPackages`.                                       |
 | `programs.nix-crab.downgrade.package`    | Override the wrapper script.                                                                               |
 
@@ -262,6 +263,8 @@ client:
 
 ```nix
 programs.nix-crab.millennium.enable = true;
+# For CPUs without AVX2:
+# programs.nix-crab.millennium.bunBaseline = true;
 ```
 
 It is applied as an overlay (`steam = millennium-steam`), not as `programs.steam.package` — that
